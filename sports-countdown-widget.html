@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Teams</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .widget {
+    width: 100%;
+    max-width: 860px;
+  }
+
+  .widget-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 20px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    height: 220px;
+    border: 2px solid rgba(0,0,0,0.85);
+  }
+
+
+
+
+
+  .card-sharks  { background-color: #006D75; }
+  .card-arsenal { background-color: #EF0107; }
+  .card-49ers   { background-color: #AA0000; }
+  .card-giants  { background-color: #FD5A1E; }
+
+  /* ── CARD TOP ── */
+  .card-top {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    right: 24px;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .team-name {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .league-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.2);
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+
+  /* ── CARD BOTTOM — pinned to bottom edge, same for all states ── */
+  .card-bottom {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    right: 24px;
+    z-index: 1;
+  }
+
+  /* ── NUMBERS ROW — shared layout for both countdown and score ── */
+  .numbers-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    height: 58px; /* fixed height: 44px number + 5px gap + 9px label */
+  }
+
+  /* ── COUNTDOWN SPECIFIC ── */
+  .time-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-start;
+  }
+
+  .time-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 44px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .time-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    margin-top: 5px;
+  }
+
+  .time-sep {
+    font-family: 'DM Mono', monospace;
+    font-size: 32px;
+    color: rgba(255,255,255,0.25);
+    line-height: 1;
+    margin-bottom: 14px; /* push up to align with numbers, offset for label space */
+  }
+
+  /* ── OFFSEASON SPECIFIC ── */
+  .offseason-score {
+    font-family: 'DM Mono', monospace;
+    font-size: 44px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .offseason-result {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 2px; /* sit just above baseline of score */
+  }
+
+  .result-won  { color: rgba(160,255,160,0.95); }
+  .result-lost { color: rgba(255,160,160,0.95); }
+
+  /* ── OFFSEASON LABEL ── */
+  .offseason-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 44px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── MATCH INFO — shared ── */
+  .match-info {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .match-info strong {
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+  }
+
+  /* ── LOADING ── */
+  .loading-pulse {
+    width: 60%;
+    height: 44px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+    margin-bottom: 10px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+    .time-number, .offseason-label { font-size: 38px; }
+    .time-sep { font-size: 26px; }
+    .numbers-row { height: 52px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="widget">
+  <div class="grid">
+
+    <div class="card card-sharks" id="card-sharks">
+      <div class="card-top">
+        <div class="team-name">San Jose Sharks</div>
+        <div class="league-badge">NHL</div>
+      </div>
+      <div class="card-bottom">
+        <div class="loading-pulse"></div>
+        <div class="match-info">Loading schedule...</div>
+      </div>
+    </div>
+
+    <div class="card card-arsenal" id="card-arsenal">
+      <div class="card-top">
+        <div class="team-name">Arsenal FC</div>
+        <div class="league-badge">EPL</div>
+      </div>
+      <div class="card-bottom">
+        <div class="loading-pulse"></div>
+        <div class="match-info">Loading schedule...</div>
+      </div>
+    </div>
+
+    <div class="card card-49ers" id="card-49ers">
+      <div class="card-top">
+        <div class="team-name">San Francisco 49ers</div>
+        <div class="league-badge">NFL</div>
+      </div>
+      <div class="card-bottom">
+        <div class="loading-pulse"></div>
+        <div class="match-info">Loading schedule...</div>
+      </div>
+    </div>
+
+    <div class="card card-giants" id="card-giants">
+      <div class="card-top">
+        <div class="team-name">SF Giants</div>
+        <div class="league-badge">MLB</div>
+      </div>
+      <div class="card-bottom">
+        <div class="loading-pulse"></div>
+        <div class="match-info">Loading schedule...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const TEAMS = [
+  { id: 'sharks',  sport: 'hockey',   espnId: '28',  name: 'San Jose Sharks' },
+  { id: 'arsenal', sport: 'soccer',   espnId: '359', espnLeague: 'eng.1', name: 'Arsenal FC' },
+  { id: '49ers',   sport: 'football', espnId: '25',  name: 'San Francisco 49ers' },
+  { id: 'giants',  sport: 'baseball', espnId: '26',  name: 'SF Giants' },
+];
+
+async function fetchEvents(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    return (await res.json()).events || [];
+  } catch { return []; }
+}
+
+function getSoccerUrls(team) {
+  // Use the calendar/fixtures endpoint which always reflects the current live season
+  const base = 'https://site.api.espn.com/apis/site/v2/sports/soccer';
+  return [
+    `${base}/${team.espnLeague}/teams/${team.espnId}/schedule?season=2026`,
+    `${base}/${team.espnLeague}/teams/${team.espnId}/schedule?season=2025`,
+    `${base}/${team.espnLeague}/scoreboard?dates=20260101-20260801&limit=200`,
+    `${base}/${team.espnLeague}/scoreboard?dates=20251001-20251231&limit=200`,
+  ];
+}
+
+function filterSoccerEventsForTeam(events, espnId) {
+  // When using scoreboard endpoints, filter to only this team's games
+  return events.filter(e => {
+    const competitors = e.competitions?.[0]?.competitors || [];
+    return competitors.some(c => String(c.team?.id) === String(espnId));
+  });
+}
+
+function getScheduleUrl(team, seasontype = 2) {
+  const base = 'https://site.api.espn.com/apis/site/v2/sports';
+  const path = { hockey: 'hockey/nhl', football: 'football/nfl', baseball: 'baseball/mlb' }[team.sport];
+  return `${base}/${path}/teams/${team.espnId}/schedule?seasontype=${seasontype}`;
+}
+
+async function fetchNextGame(team) {
+  try {
+    let events = [];
+    if (team.sport === 'soccer') {
+      const results = await Promise.all(getSoccerUrls(team).map(fetchEvents));
+      events = filterSoccerEventsForTeam(results.flat(), team.espnId);
+    } else {
+      const [reg, post] = await Promise.all([
+        fetchEvents(getScheduleUrl(team, 2)),
+        fetchEvents(getScheduleUrl(team, 3)),
+      ]);
+      events = [...reg, ...post];
+    }
+
+    const now = Date.now();
+    const upcoming = events
+      .filter(e => new Date(e.date).getTime() > now)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (upcoming.length === 0) {
+      const played = events
+        .filter(e => new Date(e.date).getTime() <= now)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (played.length > 0) {
+        const comp = played[0].competitions?.[0];
+        const mine = comp?.competitors?.find(c => String(c.team?.id) === String(team.espnId));
+        const opp  = comp?.competitors?.find(c => String(c.team?.id) !== String(team.espnId));
+        const extract = s => (s && typeof s === 'object') ? (s.displayValue ?? s.value ?? '?') : (s ?? '?');
+        const myScore  = extract(mine?.score);
+        const oppScore = extract(opp?.score);
+        const score = mine?.homeAway === 'home' ? `${myScore}–${oppScore}` : `${oppScore}–${myScore}`;
+        return {
+          offseason: true,
+          lastResult: mine?.winner ? 'Won' : 'Lost',
+          score,
+          lastDate: played[0].date,
+          lastOpponent: opp?.team?.displayName || opp?.team?.name || 'Opponent',
+        };
+      }
+      return { offseason: true };
+    }
+
+    const comp = upcoming[0].competitions?.[0];
+    const mine = comp?.competitors?.find(c => String(c.team?.id) === String(team.espnId));
+    const opp  = comp?.competitors?.find(c => String(c.team?.id) !== String(team.espnId));
+    return {
+      date: new Date(upcoming[0].date),
+      opponent: opp?.team?.displayName || opp?.team?.name || 'TBD',
+      homeAway: mine?.homeAway === 'home' ? 'vs' : '@',
+    };
+  } catch { return { error: true }; }
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function getCountdownParts(date) {
+  const diff = date - Date.now();
+  if (diff <= 0) return null;
+  return {
+    days:  Math.floor(diff / 86400000),
+    hours: Math.floor((diff % 86400000) / 3600000),
+    mins:  Math.floor((diff % 3600000) / 60000),
+    secs:  Math.floor((diff % 60000) / 1000),
+  };
+}
+
+function countdownHTML(parts) {
+  if (!parts) return `<div class="match-info">Game is starting now!</div>`;
+  const tb = (n, label) => `<div class="time-block"><div class="time-number">${pad(n)}</div><div class="time-label">${label}</div></div>`;
+  const sep = `<div class="time-sep">:</div>`;
+  return `<div class="numbers-row">${tb(parts.days,'Days')}${sep}${tb(parts.hours,'Hrs')}${sep}${tb(parts.mins,'Min')}${sep}${tb(parts.secs,'Sec')}</div>`;
+}
+
+function renderCard(teamId, data) {
+  const bottom = document.querySelector(`#card-${teamId} .card-bottom`);
+
+  if (data.error) {
+    bottom.innerHTML = `<div class="numbers-row"></div><div class="match-info">Couldn't load schedule.</div>`;
+    return;
+  }
+
+  if (data.offseason) {
+    bottom.innerHTML = `
+      <div class="numbers-row">
+        <span class="offseason-label">Offseason</span>
+      </div>
+      <div class="match-info">No upcoming games scheduled</div>`;
+    return;
+  }
+
+  function update() {
+    const parts = getCountdownParts(data.date);
+    const dateStr = data.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const timeStr = data.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+    bottom.innerHTML = `
+      ${countdownHTML(parts)}
+      <div class="match-info"><strong>${data.homeAway} ${data.opponent}</strong> &nbsp;·&nbsp; ${dateStr} &nbsp;·&nbsp; ${timeStr}</div>`;
+  }
+
+  update();
+  const iv = setInterval(() => {
+    const parts = getCountdownParts(data.date);
+    if (!parts) { clearInterval(iv); update(); return; }
+    const nums = document.querySelectorAll(`#card-${teamId} .time-number`);
+    if (nums.length === 4) {
+      nums[0].textContent = pad(parts.days);
+      nums[1].textContent = pad(parts.hours);
+      nums[2].textContent = pad(parts.mins);
+      nums[3].textContent = pad(parts.secs);
+    }
+  }, 1000);
+}
+
+Promise.all(TEAMS.map(async t => renderCard(t.id, await fetchNextGame(t))));
+</script>
+</body>
+</html>
