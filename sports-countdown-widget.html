@@ -170,6 +170,29 @@
     letter-spacing: -0.02em;
   }
 
+  .live-score {
+    font-family: 'DM Mono', monospace;
+    font-size: 44px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .live-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(0,0,0,0.25);
+    padding: 4px 10px;
+    border-radius: 20px;
+    align-self: flex-end;
+    margin-bottom: 6px;
+  }
+
   /* ── MATCH INFO — shared ── */
   .match-info {
     font-size: 13px;
@@ -317,6 +340,25 @@ async function fetchNextGame(team) {
     }
 
     const now = Date.now();
+
+    // Check for a live game first — state 'in' means currently in progress
+    const live = events.find(e => e.competitions?.[0]?.status?.type?.state === 'in');
+    if (live) {
+      const comp = live.competitions?.[0];
+      const mine = comp?.competitors?.find(c => String(c.team?.id) === String(team.espnId));
+      const opp  = comp?.competitors?.find(c => String(c.team?.id) !== String(team.espnId));
+      const extract = s => (s && typeof s === 'object') ? (s.displayValue ?? s.value ?? '?') : (s ?? '?');
+      const myScore  = extract(mine?.score);
+      const oppScore = extract(opp?.score);
+      const score = mine?.homeAway === 'home' ? `${myScore}–${oppScore}` : `${oppScore}–${myScore}`;
+      return {
+        live: true,
+        opponent: opp?.team?.displayName || opp?.team?.name || 'Opponent',
+        homeAway: mine?.homeAway === 'home' ? 'vs' : '@',
+        score,
+      };
+    }
+
     const upcoming = events
       .filter(e => new Date(e.date).getTime() > now)
       .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -381,6 +423,16 @@ function renderCard(teamId, data) {
 
   if (data.error) {
     bottom.innerHTML = `<div class="numbers-row"></div><div class="match-info">Couldn't load schedule.</div>`;
+    return;
+  }
+
+  if (data.live) {
+    bottom.innerHTML = `
+      <div class="numbers-row">
+        <span class="live-score">${data.score}</span>
+        <span class="live-badge">Live</span>
+      </div>
+      <div class="match-info"><strong>${data.homeAway} ${data.opponent}</strong></div>`;
     return;
   }
 
